@@ -25,6 +25,8 @@ public:
     ~ElaWindow();
 
     void moveToCenter();
+    void moveToMouseScreenCenter();
+    void adjustWindowSizeWithScreen();
 
     void setCustomWidget(ElaAppBarType::CustomArea customArea, QWidget* customWidget);
     QWidget* getCustomWidget() const;

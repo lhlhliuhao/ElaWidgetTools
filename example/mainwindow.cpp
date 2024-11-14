@@ -6,6 +6,7 @@
 #include <QStackedWidget>
 #include <QStatusBar>
 #include <QVBoxLayout>
+#include <QTimer>
 
 #include "ElaContentDialog.h"
 #include "ElaDockWidget.h"
@@ -56,8 +57,9 @@ MainWindow::MainWindow(QWidget* parent)
         _closeDialog->exec();
     });
 
-    //移动到中心
-    moveToCenter();
+    //移动到鼠标所在屏幕中心
+    moveToMouseScreenCenter();
+    adjustWindowSizeWithScreen();
 }
 
 MainWindow::~MainWindow()
@@ -262,7 +264,7 @@ void MainWindow::initContent()
         if (_aboutKey == nodeKey)
         {
             _aboutPage->setFixedSize(400, 400);
-            _aboutPage->moveToCenter();
+            _aboutPage->moveToMouseScreenCenter();
             _aboutPage->show();
         }
     });

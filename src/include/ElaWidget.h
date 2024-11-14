@@ -17,7 +17,15 @@ class ELA_EXPORT ElaWidget : public QWidget
 public:
     explicit ElaWidget(QWidget* parent = nullptr);
     ~ElaWidget();
+    /**
+     * @brief 移动到窗口当前所在屏幕的中心，如果窗口不在任意屏幕中则移动到里窗口中心距离最近的屏幕中心
+     */
     void moveToCenter();
+    /**
+     * @brief 移动到鼠标所在屏幕的中心
+     */
+    void moveToMouseScreenCenter();
+    void adjustWindowSizeWithScreen();
 
     void setWindowButtonFlag(ElaAppBarType::ButtonType buttonFlag, bool isEnable = true);
     void setWindowButtonFlags(ElaAppBarType::ButtonFlags buttonFlags);

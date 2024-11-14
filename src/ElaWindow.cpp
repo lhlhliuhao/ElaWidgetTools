@@ -11,6 +11,7 @@
 #include <QTimer>
 #include <QToolBar>
 #include <QVBoxLayout>
+#include <QtMath>
 
 #include "ElaApplication.h"
 #include "ElaCentralStackedWidget.h"
@@ -186,12 +187,123 @@ void ElaWindow::moveToCenter()
     {
         return;
     }
+
+    QPoint widgetCenter = this->geometry().center();
+    QScreen *targetScreen = nullptr;
+
 #if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
-    auto geometry = screen()->availableGeometry();
+    targetScreen = screen();//QGuiApplication::screenAt(widgetCenter);
 #else
-    auto geometry = qApp->screenAt(this->geometry().center())->geometry();
+    targetScreen = qApp->screenAt(widgetCenter);
 #endif
-    setGeometry((geometry.left() + geometry.right() - width()) / 2, (geometry.top() + geometry.bottom() - height()) / 2, width(), height());
+
+    // 如果 widgetCenter 不在任何屏幕内，则找距离最近的屏幕
+    if (!targetScreen)
+    {
+        int minDistance = INT_MAX;
+        foreach (QScreen *screen, QGuiApplication::screens()) {
+            QPoint screenCenter = screen->geometry().center();
+            int distance = qSqrt(qPow(screenCenter.x() - widgetCenter.x(), 2) +
+                                 qPow(screenCenter.y() - widgetCenter.y(), 2));
+
+            if (distance < minDistance)
+            {
+                minDistance = distance;
+                targetScreen = screen;
+            }
+        }
+    }
+
+    // 将窗口移动到目标屏幕的中心
+    if (targetScreen)
+    {
+        QRect screenGeometry = targetScreen->availableGeometry();
+        int newX = (screenGeometry.left() + screenGeometry.right() - width()) / 2;
+        int newY = (screenGeometry.top() + screenGeometry.bottom() - height()) / 2;
+        setGeometry(newX, newY, width(), height());
+    }
+}
+
+void ElaWindow::moveToMouseScreenCenter()
+{
+    if (isMaximized() || isFullScreen())
+    {
+        return;
+    }
+
+    // 获取鼠标当前的位置
+    QPoint mousePos = QCursor::pos();
+    QScreen *targetScreen = nullptr;
+
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+    targetScreen = QGuiApplication::screenAt(mousePos);
+#else
+    targetScreen = qApp->screenAt(mousePos);
+#endif
+
+    // 如果 widgetCenter 不在任何屏幕内，则找距离最近的屏幕
+    if (!targetScreen)
+    {
+        int minDistance = INT_MAX;
+        foreach (QScreen *screen, QGuiApplication::screens()) {
+            QPoint screenCenter = screen->geometry().center();
+            int distance = qSqrt(qPow(screenCenter.x() - mousePos.x(), 2) +
+                                 qPow(screenCenter.y() - mousePos.y(), 2));
+
+            if (distance < minDistance)
+            {
+                minDistance = distance;
+                targetScreen = screen;
+            }
+        }
+    }
+
+    // 将窗口移动到目标屏幕的中心
+    if (targetScreen)
+    {
+        QRect screenGeometry = targetScreen->availableGeometry();
+        int newX = (screenGeometry.left() + screenGeometry.right() - width()) / 2;
+        int newY = (screenGeometry.top() + screenGeometry.bottom() - height()) / 2;
+        setGeometry(newX, newY, width(), height());
+    }
+}
+
+void ElaWindow::adjustWindowSizeWithScreen()
+{
+    // 获取当前窗口的几何尺寸
+    QRect windowGeometry = this->geometry();
+    int currentWidth = windowGeometry.width();
+    int currentHeight = windowGeometry.height();
+    QPoint windowCenter = windowGeometry.center();
+
+    // 获取当前屏幕的可用几何区域
+    QScreen *screen = QGuiApplication::screenAt(windowCenter);
+    if (!screen)
+    {
+        // 如果没有找到屏幕，直接返回
+        return;
+    }
+
+    QRect screenGeometry = screen->availableGeometry();
+    int screenWidth = screenGeometry.width();
+    int screenHeight = screenGeometry.height();
+
+    // 调整窗口宽度，如果当前宽度大于屏幕宽度，则设置为屏幕宽度
+    int newWidth = currentWidth > screenWidth ? screenWidth : currentWidth;
+
+    // 调整窗口高度，如果当前高度大于屏幕高度，则设置为屏幕高度
+    int newHeight = currentHeight > screenHeight ? screenHeight : currentHeight;
+
+    // 计算调整后的窗口左上角位置，确保窗口中心不变
+    int newX = windowCenter.x() - newWidth / 2;
+    int newY = windowCenter.y() - newHeight / 2;
+
+    // 如果计算后的左上角位置超出了屏幕范围，进行修正
+    newX = std::max(newX, screenGeometry.left());
+    newY = std::max(newY, screenGeometry.top());
+
+    // 设置新的窗口大小和位置
+    this->setGeometry(newX, newY, newWidth, newHeight);
 }
 
 void ElaWindow::setCustomWidget(ElaAppBarType::CustomArea customArea, QWidget* widget)
